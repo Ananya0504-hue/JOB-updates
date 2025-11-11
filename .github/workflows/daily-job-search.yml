@@ -1,0 +1,44 @@
+name: Daily Job Search (12:00 IST)
+
+on:
+  schedule:
+    # Runs at 06:30 UTC every day == 12:00 IST (UTC+5:30).
+    - cron: '30 6 * * *'
+  workflow_dispatch: {}
+
+jobs:
+  run-search:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          # allow pushing file updates back to the repo
+          persist-credentials: true
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run job search script
+        env:
+          GCP_API_KEY: ${{ secrets.GCP_API_KEY }}
+          CSE_ID: ${{ secrets.CSE_ID }}
+          FROM_EMAIL: ${{ secrets.FROM_EMAIL }}
+          TO_EMAIL: ${{ secrets.TO_EMAIL }}
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
+          GITHUB_REPOSITORY: ${{ github.repository }}   # e.g., owner/repo
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}     # if you prefer to supply PAT, set it in secrets; otherwise Actions provides an automatic token in the runner, but using it here from secrets is fine
+          FILE_PATH: sent_links.json
+        run: |
+          python job_searcher.py
